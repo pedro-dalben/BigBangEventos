@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "meumod",
+  "version": "${version}",
+  "name": "Meu Mod de Evento",
+  "description": "Adiciona um novo tipo de evento ao BigBangEventos.",
+  "authors": ["Voce"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.meumod.MeuModInitializer"
+    ],
+    "bigbangeventos:event_module": [
+      "com.meumod.MeuModModule"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1",
+    "bigbangeventos": ">=0.1.0"
+  },
+  "custom": {
+    "bigbangeventos:module": {
+      "id": "meumod",
+      "api-version": 1
+    }
+  }
+}

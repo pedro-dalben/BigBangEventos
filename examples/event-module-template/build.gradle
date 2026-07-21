@@ -1,0 +1,72 @@
+plugins {
+    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'java'
+}
+
+group = 'com.meumod'
+version = '1.0.0'
+
+base {
+    archivesName = 'meumod'
+}
+
+repositories {
+    mavenCentral()
+    // Se o BigBangEventos estiver em um repositório local:
+    // flatDir { dirs 'libs' }
+    // ou Maven local:
+    // mavenLocal()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${parchment_minecraft_version}:${parchment_mappings_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // Dependência do BigBangEventos
+    // Opção 1: direto do diretório de build
+    modImplementation files('../build/libs/bigbangeventos-0.1.0.jar')
+
+    // Opção 2: como dependência de módulo (multi-projeto)
+    // implementation project(':')
+
+    // Opção 3: como dependência local (após compilar)
+    // modImplementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Testes
+    testImplementation "org.junit.jupiter:junit-jupiter:${junit_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+tasks.named('processResources').configure {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') {
+        expand version: project.version
+    }
+}
+
+loom {
+    runs {
+        server {
+            server()
+        }
+    }
+    // Se o BigBangEventos estiver em outro projeto, configure o path:
+    // modFiles.from(fileTree(dir: '../build/libs'))
+}
