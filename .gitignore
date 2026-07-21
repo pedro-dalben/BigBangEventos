@@ -2,8 +2,8 @@
 .gradle/
 build/
 !src/**/build/
-common/build/
-neoforge/build/
+modules/*/build/
+modules/*/.gradle/
 *.iml
 *.idea/
 *.class

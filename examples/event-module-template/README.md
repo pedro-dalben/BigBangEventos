@@ -75,7 +75,6 @@ O JAR estará em `build/libs/`.
 ```
 event-module-template/
   build.gradle                          # Build config
-  fabric.mod.json                       # Mod metadata
   src/main/java/com/meumod/
     MeuModInitializer.java              # ModInitializer (Fabric)
     MeuModModule.java                   # BigBangEventModule
@@ -84,9 +83,10 @@ event-module-template/
     MeuModDataStore.java                # Persistência
     MeuModListener.java                 # Listeners Fabric
   src/main/resources/
-    fabric.mod.json                     # (copiado para output)
+    fabric.mod.json                     # Metadados do mod
   src/test/java/com/meumod/
     MeuModTest.java                     # Testes do módulo
+    TestStubs.java                      # Stubs para testes
 ```
 
 ## Dependências
