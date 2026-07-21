@@ -1,0 +1,4 @@
+package com.pedrodalben.bigbangeventos.timer;
+import java.time.*;
+/** Clock-based timer: calling tick late never stretches time. */
+public final class SessionTimer { private final Clock clock; private Duration remaining; private Instant resumedAt; private boolean cancelled; public SessionTimer(Clock clock,Duration duration){this.clock=clock;remaining=duration;} public void resume(){if(resumedAt==null&&!cancelled)resumedAt=clock.instant();} public void pause(){if(resumedAt!=null){remaining=remaining.minus(Duration.between(resumedAt,clock.instant()));resumedAt=null;}} public Duration remaining(){return resumedAt==null?remaining:remaining.minus(Duration.between(resumedAt,clock.instant())).isNegative()?Duration.ZERO:remaining.minus(Duration.between(resumedAt,clock.instant()));} public boolean expired(){return !cancelled&&!remaining().isPositive();} public void cancel(){cancelled=true;resumedAt=null;} }

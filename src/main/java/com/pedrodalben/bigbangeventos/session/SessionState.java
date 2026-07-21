@@ -1,0 +1,2 @@
+package com.pedrodalben.bigbangeventos.session;
+public enum SessionState { CREATED, REGISTRATION_OPEN, REGISTRATION_CLOSED, COUNTDOWN, RUNNING, PAUSED, FINISHING, FINISHED, CANCELLED, FAILED }
