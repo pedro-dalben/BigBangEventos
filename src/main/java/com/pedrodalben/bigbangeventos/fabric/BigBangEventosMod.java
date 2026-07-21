@@ -1,6 +1,7 @@
 package com.pedrodalben.bigbangeventos.fabric;
 
 import com.pedrodalben.bigbangeventos.BigBangEventos;
+import com.pedrodalben.bigbangeventos.api.module.ModuleLoader;
 import com.pedrodalben.bigbangeventos.command.EventoCommand;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -10,6 +11,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 
 public final class BigBangEventosMod implements ModInitializer {
+    private ModuleLoader moduleLoader;
+
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTING.register(this::onServerStarting);
@@ -32,13 +35,18 @@ public final class BigBangEventosMod implements ModInitializer {
     private void onServerStarting(MinecraftServer server) {
         BigBangEventos.init(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("bigbangeventos"), server);
+        moduleLoader = new ModuleLoader();
     }
 
     private void onServerStarted(MinecraftServer server) {
         BigBangEventos.engine().recoverOnStartup();
+        moduleLoader.discoverAndLoad();
     }
 
     private void onServerStopping(MinecraftServer server) {
+        if (moduleLoader != null) {
+            moduleLoader.disableAll();
+        }
         try {
             BigBangEventos.engine().onServerShutdown();
         } catch (Exception e) {

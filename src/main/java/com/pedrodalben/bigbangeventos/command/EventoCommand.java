@@ -224,6 +224,10 @@ public final class EventoCommand {
         }
     }
 
+    public static String getEditing(UUID playerId) {
+        return editing.get(playerId);
+    }
+
     public static boolean bindSelected(UUID player, String value) {
         TriggerSelection selection = binding.remove(player);
         if (selection == null) return false;
