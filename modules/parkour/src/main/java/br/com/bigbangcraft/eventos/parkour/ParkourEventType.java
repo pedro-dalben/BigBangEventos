@@ -3,7 +3,10 @@ package br.com.bigbangcraft.eventos.parkour;
 import com.pedrodalben.bigbangeventos.definition.EventDefinition;
 import com.pedrodalben.bigbangeventos.eventtype.EventType;
 import com.pedrodalben.bigbangeventos.session.EventSession;
+import com.pedrodalben.bigbangeventos.trigger.EventTrigger;
 import com.pedrodalben.bigbangeventos.validation.ValidationResult;
+
+import java.util.UUID;
 
 public final class ParkourEventType implements EventType {
 
@@ -51,5 +54,12 @@ public final class ParkourEventType implements EventType {
     @Override
     public void onSessionCancel(EventSession session, String reason) {
         sessionService.onSessionCancel(session, reason);
+    }
+
+    @Override
+    public void onTriggerFired(EventSession session, EventTrigger trigger, UUID playerId) {
+        String binding = trigger.binding().orElse(null);
+        if (binding == null) return;
+        sessionService.onTriggerFired(session, trigger.id(), binding, playerId);
     }
 }
