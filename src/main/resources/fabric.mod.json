@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "bigbangeventos",
+  "version": "${version}",
+  "name": "BigBangEventos",
+  "description": "Motor de eventos da rede BigBangCraft.",
+  "authors": ["pedrodalben"],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": { "main": ["com.pedrodalben.bigbangeventos.fabric.BigBangEventosMod"] },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1"
+  }
+}

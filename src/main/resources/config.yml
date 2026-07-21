@@ -1,0 +1,24 @@
+server:
+  id: cobbleverse
+  network-id: bigbangcraft
+storage:
+  type: local
+events:
+  allow-multiple-active-events: true
+  allow-player-in-multiple-events: false
+timers:
+  default-countdown-seconds: 60
+  default-duration-seconds: 0
+  announcements: [60, 30, 10, 5, 4, 3, 2, 1]
+participation:
+  default-inventory-mode: CLEAR_AND_RESTORE
+  teleport-to-lobby-on-join: true
+  teleport-to-exit-on-leave: true
+disconnect:
+  default-policy: grace-period
+  grace-period-seconds: 120
+  timer-policy: continue
+recovery:
+  interrupted-session-policy: cancel-and-restore
+debug:
+  enabled: false
