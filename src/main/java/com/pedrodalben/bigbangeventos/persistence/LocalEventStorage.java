@@ -57,6 +57,8 @@ public final class LocalEventStorage implements EventStorage {
             triggers.put(t.id(), x);
         });
         m.put("triggers", triggers);
+        Map<String, Object> settings = d.typeSettings();
+        if (!settings.isEmpty()) m.put("type-settings", settings);
         write(events.resolve(d.id() + ".yml"), m);
     }
 
@@ -205,6 +207,12 @@ public final class LocalEventStorage implements EventStorage {
                                         com.pedrodalben.bigbangeventos.trigger.ActionType.valueOf(str(am, "type")), args));
                             }
                         d.putTrigger(t);
+                    }
+                    Object ts = m.get("type-settings");
+                    if (ts instanceof Map<?, ?> typeSettings) {
+                        for (var e : typeSettings.entrySet()) {
+                            d.typeSetting(e.getKey().toString(), e.getValue());
+                        }
                     }
                     definitions.put(d.id(), d);
                 } catch (Exception e) {
