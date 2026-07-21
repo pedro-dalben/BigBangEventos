@@ -1,0 +1,40 @@
+plugins {
+    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'java'
+}
+
+group = project.mod_group_id
+version = project.mod_version
+
+base { archivesName = project.mod_id }
+
+repositories { mavenCentral() }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${parchment_minecraft_version}:${parchment_mappings_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "org.yaml:snakeyaml:${snakeyaml_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter:${junit_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
+
+tasks.named('processResources').configure {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') {
+        expand version: project.version
+    }
+}
+
+loom { runs { server { server() } } }

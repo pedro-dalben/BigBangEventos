@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+build/
+!src/**/build/
+common/build/
+neoforge/build/
+*.iml
+*.idea/
+*.class
+
+# Runtime
+run/
+logs/
+*.log
+*.log.gz
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Config
+eula.txt
+ops.json
+whitelist.json
+banned-ips.json
+banned-players.json
+usercache.json
+
+# Temp
+*.tmp
+*.temp
