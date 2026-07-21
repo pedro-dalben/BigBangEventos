@@ -164,6 +164,158 @@ class EventCoreTest {
         assertEquals("player_offline", r.code());
     }
 
+    // --- EventArea: cuboid containment ---
+    @Test void cuboidAreaContains() {
+        EventArea.Cuboid area = new EventArea.Cuboid("sv", "minecraft:overworld",
+                0, 0, 0, 10, 10, 10);
+        assertTrue(area.contains("sv", "minecraft:overworld", 5, 5, 5));
+        assertTrue(area.contains("sv", "minecraft:overworld", 0, 0, 0));
+        assertTrue(area.contains("sv", "minecraft:overworld", 10, 10, 10));
+        assertFalse(area.contains("sv", "minecraft:overworld", 12, 5, 5));
+        assertFalse(area.contains("sv", "minecraft:nether", 5, 5, 5));
+    }
+
+    @Test void cuboidAreaRejectsInvalidBounds() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new EventArea.Cuboid("sv", "dim", 10, 0, 0, 0, 0, 0));
+    }
+
+    // --- EventArea: radius containment ---
+    @Test void radiusAreaContains() {
+        EventArea.Radius area = new EventArea.Radius("sv", "minecraft:overworld",
+                0, 64, 0, 5.0, 10.0);
+        assertTrue(area.contains("sv", "minecraft:overworld", 0, 64, 0));
+        assertTrue(area.contains("sv", "minecraft:overworld", 3, 70, 4));
+        assertFalse(area.contains("sv", "minecraft:overworld", 6, 64, 0));
+        assertFalse(area.contains("sv", "minecraft:overworld", 0, 75, 0));
+    }
+
+    @Test void radiusAreaRejectsInvalidRadius() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new EventArea.Radius("sv", "dim", 0, 0, 0, 0, 5));
+        assertThrows(IllegalArgumentException.class, () ->
+                new EventArea.Radius("sv", "dim", 0, 0, 0, 5, 0));
+    }
+
+    // --- EventTrigger: area assignment ---
+    @Test void triggerCanHoldArea() {
+        EventTrigger t = new EventTrigger("region_cp", TriggerType.REGION_ENTER);
+        t.area(new EventArea.Cuboid("sv", "dim", 0, 0, 0, 10, 10, 10));
+        assertTrue(t.area().isPresent());
+        assertTrue(t.area().get() instanceof EventArea.Cuboid);
+    }
+
+    // --- Trigger: maxUses respected ---
+    @Test void triggerMaxUsesBlocksExcess() {
+        EventEngine e = engine();
+        assertTrue(e.create("test", "generic", "server").success());
+        EventDefinition d = e.definition("test").orElseThrow();
+        d.location(LocationName.LOBBY, location());
+        d.location(LocationName.ENTRANCE, location());
+        d.location(LocationName.EXIT, location());
+        e.save(d);
+        assertTrue(e.open("test", null).success());
+        UUID p = UUID.randomUUID();
+        assertTrue(e.join("test", p, "p", false, true).success());
+        assertTrue(e.start("test").success());
+
+        EventTrigger t = new EventTrigger("once", TriggerType.MANUAL);
+        t.maxUses(1);
+        t.addAction(new TriggerAction(ActionType.SEND_MESSAGE, Map.of("message", "hi")));
+        d.putTrigger(t);
+        e.save(d);
+
+        assertTrue(e.activateTrigger("test", "once", p, "p",
+                (id, perm) -> true, (id, msg) -> {}).success());
+        assertFalse(e.activateTrigger("test", "once", p, "p",
+                (id, perm) -> true, (id, msg) -> {}).success());
+    }
+
+    // --- Trigger: cooldown respected ---
+    @Test void triggerCooldownBlocksRapidUse() {
+        EventEngine e = engine();
+        assertTrue(e.create("test2", "generic", "server").success());
+        EventDefinition d = e.definition("test2").orElseThrow();
+        d.location(LocationName.LOBBY, location());
+        d.location(LocationName.ENTRANCE, location());
+        d.location(LocationName.EXIT, location());
+        e.save(d);
+        assertTrue(e.open("test2", null).success());
+        UUID p = UUID.randomUUID();
+        assertTrue(e.join("test2", p, "p2", false, true).success());
+        assertTrue(e.start("test2").success());
+
+        EventTrigger t = new EventTrigger("slow", TriggerType.MANUAL);
+        t.cooldown(Duration.ofDays(1));
+        t.addAction(new TriggerAction(ActionType.SEND_MESSAGE, Map.of("message", "msg")));
+        d.putTrigger(t);
+        e.save(d);
+
+        assertTrue(e.activateTrigger("test2", "slow", p, "p2",
+                (id, perm) -> true, (id, msg) -> {}).success());
+        assertFalse(e.activateTrigger("test2", "slow", p, "p2",
+                (id, perm) -> true, (id, msg) -> {}).success());
+    }
+
+    // --- Trigger: disabled trigger rejects ---
+    @Test void disabledTriggerRejects() {
+        EventEngine e = engine();
+        assertTrue(e.create("test3", "generic", "server").success());
+        EventDefinition d = e.definition("test3").orElseThrow();
+        d.location(LocationName.LOBBY, location());
+        d.location(LocationName.ENTRANCE, location());
+        d.location(LocationName.EXIT, location());
+        e.save(d);
+        assertTrue(e.open("test3", null).success());
+        UUID p = UUID.randomUUID();
+        assertTrue(e.join("test3", p, "p3", false, true).success());
+        assertTrue(e.start("test3").success());
+
+        EventTrigger t = new EventTrigger("off", TriggerType.MANUAL);
+        t.enabled(false);
+        t.addAction(new TriggerAction(ActionType.SEND_MESSAGE, Map.of("message", "msg")));
+        d.putTrigger(t);
+        e.save(d);
+
+        assertFalse(e.activateTrigger("test3", "off", p, "p3",
+                (id, perm) -> true, (id, msg) -> {}).success());
+    }
+
+    // --- Snapshot: KEEP mode preserves inventory ---
+    @Test void snapshotKeepModePreservesInventory() {
+        Map<String, String> inventory = new HashMap<>(Map.of("0", "diamond"));
+        Map<String, String> armor = new HashMap<>();
+        StubSnapshotGateway gw = new StubSnapshotGateway(inventory, armor, "");
+        SnapshotService snapshots = new SnapshotService(gw);
+
+        UUID pid = UUID.randomUUID();
+        UUID sid = UUID.randomUUID();
+        OperationResult prep = snapshots.prepare(pid, sid, InventoryMode.KEEP);
+        assertTrue(prep.success(), prep.message());
+        assertEquals("diamond", inventory.get("0"));
+    }
+
+    // --- Snapshot: concurrent restore guard ---
+    @Test void snapshotConcurrentRestoreRejected() {
+        Map<String, String> inventory = new HashMap<>(Map.of("0", "sword"));
+        Map<String, String> armor = new HashMap<>();
+        StubSnapshotGateway gw = new StubSnapshotGateway(inventory, armor, "");
+        SnapshotService snapshots = new SnapshotService(gw);
+        var teleport = new StubTeleportService();
+        teleport.markOnline(UUID.randomUUID());
+        PlayerRestoreService restore = new PlayerRestoreService(snapshots, gw, teleport);
+
+        UUID pid = UUID.randomUUID();
+        UUID sid = UUID.randomUUID();
+        snapshots.prepare(pid, sid, InventoryMode.CLEAR_AND_RESTORE);
+        teleport.markOnline(pid);
+
+        OperationResult r1 = restore.restore(pid, null);
+        assertTrue(r1.success());
+        OperationResult r2 = restore.restore(pid, null);
+        assertTrue(r2.success(), "second restore should be idempotent");
+    }
+
     // --- Helpers ---
     private static EventEngine engine() {
         return new EventEngine(new MemoryStorage(), Clock.systemUTC(),

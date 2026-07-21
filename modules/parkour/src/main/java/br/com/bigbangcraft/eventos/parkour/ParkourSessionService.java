@@ -306,4 +306,24 @@ public final class ParkourSessionService {
         }
         activeSessions.clear();
     }
+
+    public void onTriggerFired(EventSession session, String triggerId, String binding, UUID playerId) {
+        String sessionId = session.id().toString();
+        String playerStr = playerId.toString();
+        EventDefinition def = api.findEvent(session.eventId()).orElse(null);
+        if (def == null) return;
+
+        if ("finish".equals(triggerId)) {
+            completionService.complete(session, playerId, null);
+            return;
+        }
+
+        if (checkpointService.findCheckpoint(def.id(), triggerId).isPresent()) {
+            checkpointService.completeCheckpoint(def.id(), sessionId, playerStr, triggerId);
+            String elapsed = ParkourTimerService.format(
+                    timerService.getElapsedMillis(sessionId, playerStr));
+            players.sendMessage(playerId,
+                    "§a✔ Checkpoint §f" + triggerId + "§a completado por gatilho! (§7" + elapsed + "§a)");
+        }
+    }
 }

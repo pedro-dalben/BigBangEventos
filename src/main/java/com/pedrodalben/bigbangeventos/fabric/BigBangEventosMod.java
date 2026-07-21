@@ -57,5 +57,6 @@ public final class BigBangEventosMod implements ModInitializer {
     private void onServerTick(MinecraftServer server) {
         FabricScheduler sched = BigBangEventos.scheduler();
         if (sched != null) sched.onTick();
+        BigBangEventos.engine().onTick();
     }
 }

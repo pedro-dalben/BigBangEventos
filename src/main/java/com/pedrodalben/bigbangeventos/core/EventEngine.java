@@ -30,6 +30,7 @@ public final class EventEngine {
     private final PlatformTeleportService teleport;
     private final PlatformPlayerService players;
     private final Map<String, EventSession> active = new HashMap<>();
+    private RegionTriggerService regionTriggers;
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -48,6 +49,7 @@ public final class EventEngine {
         this.completion = new ParticipantCompletionService(clock);
         this.triggers = new TriggerService(clock, completion);
         this.recovery = new SessionRecoveryService(storage, snapshots, restore, players);
+        this.regionTriggers = new RegionTriggerService(this, players, 2);
         types.register(new GenericEventType());
     }
 
@@ -61,6 +63,9 @@ public final class EventEngine {
     public SessionRecoveryService recovery() { return recovery; }
     public PlatformTeleportService teleport() { return teleport; }
     public PlatformPlayerService players() { return players; }
+    public RegionTriggerService regionTriggers() { return regionTriggers; }
+
+    public synchronized void onTick() { regionTriggers.onTick(); }
 
     public synchronized void recoverOnStartup() { recovery.recoverOnStartup(); }
 
@@ -136,6 +141,7 @@ public final class EventEngine {
         if (!r.success()) return r;
         r = lifecycle.transition(s, SessionState.FINISHED);
         if (r.success()) {
+            regionTriggers.cleanupSession(id);
             restoreAllParticipants(s);
             storage.saveSession(s);
             active.remove(id);
@@ -149,6 +155,7 @@ public final class EventEngine {
         if (s == null) return OperationResult.fail("no_session", "Nenhuma sessão ativa");
         OperationResult r = lifecycle.cancel(s, reason);
         if (r.success()) {
+            regionTriggers.cleanupSession(id);
             restoreAllParticipants(s);
             storage.saveSession(s);
             active.remove(id);
@@ -171,7 +178,10 @@ public final class EventEngine {
         EventSession s = sessionByPlayer(player).orElse(null);
         if (s == null) return OperationResult.ok("Jogador já não participa");
         OperationResult r = participation.leave(s, player, reason);
-        if (r.success()) storage.saveSession(s);
+        if (r.success()) {
+            regionTriggers.cleanupPlayer(player);
+            storage.saveSession(s);
+        }
         return r;
     }
 
@@ -191,7 +201,11 @@ public final class EventEngine {
         var t = d.trigger(triggerId).orElse(null);
         if (t == null) return OperationResult.fail("trigger_not_found", "Gatilho não encontrado");
         OperationResult r = triggers.execute(t, new TriggerExecutionContext(s, player, name, permissions, effects));
-        if (r.success()) storage.saveSession(s);
+        if (r.success()) {
+            storage.saveSession(s);
+            var triggerRef = t;
+            types.find(d.type()).ifPresent(et -> et.onTriggerFired(s, triggerRef, player));
+        }
         return r;
     }
 
