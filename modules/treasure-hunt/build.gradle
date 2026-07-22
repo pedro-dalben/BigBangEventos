@@ -1,18 +1,8 @@
-plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT'
-    id 'java'
-}
-
+plugins { id 'fabric-loom' version '1.9-SNAPSHOT'; id 'java' }
 group = rootProject.mod_group_id
 version = rootProject.mod_version
-
-base { archivesName = 'bigbangeventos-parkour' }
-
-repositories {
-    mavenCentral()
-    maven { url = 'https://maven.parchmentmc.org' }
-}
-
+base { archivesName = 'bigbangeventos-treasure-hunt' }
+repositories { mavenCentral(); maven { url = 'https://maven.parchmentmc.org' } }
 dependencies {
     minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings loom.layered { officialMojangMappings() }
@@ -20,23 +10,10 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
     compileOnly project(':')
     testImplementation project(':')
-
-    compileOnly "com.google.code.gson:gson:2.10.1"
     testImplementation "org.junit.jupiter:junit-jupiter:${rootProject.junit_version}"
 }
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
-}
-
+java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach { useJUnitPlatform() }
-
-tasks.named('processResources').configure {
-    inputs.property('version', project.version)
-    filesMatching('fabric.mod.json') {
-        expand version: project.version
-    }
-}
-
+tasks.named('processResources').configure { inputs.property('version', project.version); filesMatching('fabric.mod.json') { expand version: project.version } }
 loom { runs { server { server() } } }

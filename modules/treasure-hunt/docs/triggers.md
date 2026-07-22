@@ -1,0 +1,3 @@
+# Triggers
+
+Use `REGION_ENTER`, `SIGN_INTERACT`, `BUTTON_INTERACT`, `LEVER_INTERACT` ou `MANUAL` com `ADD_OBJECTIVE_PROGRESS`/`COMPLETE_OBJECTIVE`. Áreas são configuradas pelo Core.

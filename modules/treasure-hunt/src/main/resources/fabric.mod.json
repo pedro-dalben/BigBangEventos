@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "bigbangeventos_treasure_hunt",
+  "version": "${version}",
+  "name": "BigBangEventos Treasure Hunt",
+  "description": "Caça ao Tesouro para BigBangEventos.",
+  "authors": ["pedro-dalben"],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": { "bigbangeventos:event_module": ["br.com.bigbangcraft.eventos.treasurehunt.TreasureHuntModule"] },
+  "depends": {
+    "fabricloader": ">=0.18.4", "minecraft": "1.21.1", "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1", "bigbangeventos": ">=0.1.0"
+  }
+}
