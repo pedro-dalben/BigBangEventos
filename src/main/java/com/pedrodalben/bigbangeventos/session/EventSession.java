@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.*;
 import com.pedrodalben.bigbangeventos.session.team.SessionTeam;
 import com.pedrodalben.bigbangeventos.session.round.SessionRound;
+import com.pedrodalben.bigbangeventos.participant.combat.ParticipantCombatState;
 
 public final class EventSession {
     private final UUID id; private final String eventId; private final int configurationVersion; private final Instant createdAt;
@@ -20,6 +21,7 @@ public final class EventSession {
     private final Map<String, SessionTeam> teamsByDef = new LinkedHashMap<>();
     private final Map<UUID, SessionTeam> teamsById = new LinkedHashMap<>();
     private final Map<UUID, SessionRound> rounds = new LinkedHashMap<>();
+    private final Map<UUID, ParticipantCombatState> combatStates = new LinkedHashMap<>();
     public EventSession(UUID id, String eventId, int configurationVersion, Instant createdAt, UUID administrator) { this.id=id;this.eventId=eventId;this.configurationVersion=configurationVersion;this.createdAt=createdAt;this.administrator=administrator; }
     public UUID id(){return id;} public String eventId(){return eventId;} public int configurationVersion(){return configurationVersion;} public Instant createdAt(){return createdAt;} public SessionState state(){return state;} public Optional<Instant> openedAt(){return Optional.ofNullable(openedAt);} public Optional<Instant> startedAt(){return Optional.ofNullable(startedAt);} public Optional<Instant> endedAt(){return Optional.ofNullable(endedAt);} public Optional<String> cancelReason(){return Optional.ofNullable(cancelReason);}
     public Collection<EventParticipant> participants(){return List.copyOf(participants.values());} public Optional<EventParticipant> participant(UUID id){return Optional.ofNullable(participants.get(id));} public boolean hasParticipant(UUID id){return participants.containsKey(id);} public int participantCount(){return participants.size();}
@@ -42,4 +44,9 @@ public final class EventSession {
     public Optional<SessionRound> round(UUID roundId) { return Optional.ofNullable(rounds.get(roundId)); }
     public void addRound(SessionRound round) { rounds.put(round.roundId(), round); }
     public void removeRound(UUID roundId) { rounds.remove(roundId); }
+    public Map<UUID, ParticipantCombatState> combatStates() { return combatStates; }
+    public Optional<ParticipantCombatState> combatState(UUID playerId) { return Optional.ofNullable(combatStates.get(playerId)); }
+    public ParticipantCombatState combatStateOrCreate(UUID playerId, int initialLives) {
+        return combatStates.computeIfAbsent(playerId, k -> new ParticipantCombatState(playerId, id(), initialLives));
+    }
 }

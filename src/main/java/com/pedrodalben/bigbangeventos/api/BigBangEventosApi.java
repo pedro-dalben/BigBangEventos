@@ -1,5 +1,5 @@
 package com.pedrodalben.bigbangeventos.api;
-import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import com.pedrodalben.bigbangeventos.core.team.TeamService; import com.pedrodalben.bigbangeventos.core.round.RoundService; import java.util.*;
+import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import com.pedrodalben.bigbangeventos.core.team.TeamService; import com.pedrodalben.bigbangeventos.core.round.RoundService; import com.pedrodalben.bigbangeventos.core.combat.CombatService; import com.pedrodalben.bigbangeventos.core.combat.LifeService; import com.pedrodalben.bigbangeventos.core.combat.EliminationService; import java.util.*;
 public final class BigBangEventosApi {
     public static final int API_VERSION = 3;
     private final EventEngine engine;
@@ -27,4 +27,7 @@ public final class BigBangEventosApi {
     public TypedDataService data(){return engine.data();}
     public TeamService teams(){return engine.teams();}
     public RoundService rounds(){return engine.rounds();}
+    public CombatService combat(){return engine.combat();}
+    public LifeService lifeService(){return engine.lifeService();}
+    public EliminationService eliminationService(){return engine.eliminationService();}
 }

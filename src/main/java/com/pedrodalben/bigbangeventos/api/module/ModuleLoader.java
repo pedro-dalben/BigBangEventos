@@ -19,6 +19,9 @@ import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
 import com.pedrodalben.bigbangeventos.core.team.TeamService;
 import com.pedrodalben.bigbangeventos.core.round.RoundService;
+import com.pedrodalben.bigbangeventos.core.combat.CombatService;
+import com.pedrodalben.bigbangeventos.core.combat.LifeService;
+import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
 
 public final class ModuleLoader {
 
@@ -161,5 +164,8 @@ public final class ModuleLoader {
         public TypedDataService data(){return data;}
         public TeamService teams(){return api.teams();}
         public RoundService rounds(){return api.rounds();}
+        public CombatService combat(){return api.combat();}
+        public LifeService lives(){return api.lifeService();}
+        public EliminationService eliminations(){return api.eliminationService();}
     }
 }

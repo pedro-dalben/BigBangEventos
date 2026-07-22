@@ -11,6 +11,9 @@ import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
 import com.pedrodalben.bigbangeventos.core.team.TeamService;
 import com.pedrodalben.bigbangeventos.core.round.RoundService;
+import com.pedrodalben.bigbangeventos.core.combat.CombatService;
+import com.pedrodalben.bigbangeventos.core.combat.LifeService;
+import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
 
 public interface EventModuleContext {
 
@@ -35,4 +38,7 @@ public interface EventModuleContext {
     default TypedDataService data() { throw new UnsupportedOperationException("API 2 não disponível"); }
     default TeamService teams() { throw new UnsupportedOperationException("API 3 não disponível"); }
     default RoundService rounds() { throw new UnsupportedOperationException("API 3 não disponível"); }
+    default CombatService combat() { throw new UnsupportedOperationException("API 3 não disponível"); }
+    default LifeService lives() { throw new UnsupportedOperationException("API 3 não disponível"); }
+    default EliminationService eliminations() { throw new UnsupportedOperationException("API 3 não disponível"); }
 }
