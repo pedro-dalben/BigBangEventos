@@ -18,6 +18,7 @@ import com.pedrodalben.bigbangeventos.stage.StageService;
 import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
 import com.pedrodalben.bigbangeventos.core.team.TeamService;
+import com.pedrodalben.bigbangeventos.core.round.RoundService;
 
 public final class ModuleLoader {
 
@@ -159,5 +160,6 @@ public final class ModuleLoader {
         public DomainEventBus events(){return events;}
         public TypedDataService data(){return data;}
         public TeamService teams(){return api.teams();}
+        public RoundService rounds(){return api.rounds();}
     }
 }

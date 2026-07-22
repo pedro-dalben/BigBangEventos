@@ -18,6 +18,7 @@ import com.pedrodalben.bigbangeventos.objective.*;
 import com.pedrodalben.bigbangeventos.stage.*;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
 import com.pedrodalben.bigbangeventos.core.team.TeamService;
+import com.pedrodalben.bigbangeventos.core.round.RoundService;
 import org.slf4j.LoggerFactory;
 
 public final class EventEngine {
@@ -43,6 +44,7 @@ public final class EventEngine {
     private final StageService stages;
     private final TypedDataService data = new TypedDataService();
     private final TeamService teams;
+    private final RoundService rounds;
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -64,6 +66,7 @@ public final class EventEngine {
         this.regionTriggers = new RegionTriggerService(this, players, 2);
         this.events = new DomainEventBus(scheduler, LoggerFactory.getLogger("BigBangEventos.DomainEvents"));
         this.teams = new TeamService(clock, events);
+        this.rounds = new RoundService(clock, events);
         this.validator = new EventValidator(types, objectiveTypes);
         this.objectives = new ObjectiveService(clock, objectiveTypes, events);
         this.objectives.teams(teams);
@@ -90,6 +93,7 @@ public final class EventEngine {
     public DomainEventBus events() { return events; }
     public TypedDataService data() { return data; }
     public TeamService teams() { return teams; }
+    public RoundService rounds() { return rounds; }
 
     public synchronized void onTick() { regionTriggers.onTick(); stages.onTick(active.values().stream().map(s -> new StageService.SessionContext(definition(s.eventId()).orElse(null), s)).filter(c -> c.definition()!=null).toList()); }
 
