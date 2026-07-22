@@ -30,6 +30,7 @@ public final class BigBangEventosMod implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 EventoCommand.register(dispatcher));
         FabricEvents.register();
+        FabricCombatEvents.register();
     }
 
     private void onServerStarting(MinecraftServer server) {
