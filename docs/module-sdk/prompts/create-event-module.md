@@ -69,6 +69,15 @@ características:
 
 {{TEST_SCENARIOS}}
 
+### Capacidades opcionais API 2
+
+{{STAGES}}
+{{OBJECTIVES}}
+{{PARTICIPANT_DATA}}
+{{SESSION_DATA}}
+{{DOMAIN_EVENTS}}
+{{SCORE_RULES}}
+
 ### Observações
 
 - Minecraft 1.21.1

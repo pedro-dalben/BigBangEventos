@@ -5,6 +5,9 @@
 Este é um template para criar um módulo Fabric server-side que adiciona
 um novo tipo de evento ao BigBangEventos.
 
+Para API 2, o módulo pode opcionalmente usar objetivos, etapas, typed data e
+`ctx.events()`; módulos API 1 continuam válidos.
+
 ## Como Usar
 
 ### 1. Copiar o Template

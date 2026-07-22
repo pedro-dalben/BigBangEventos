@@ -7,7 +7,9 @@ versão do `bigbangeventos` declara qual versão da API suporta.
 
 | Versão do Core | API Version |
 |----------------|-------------|
-| 0.1.0 | 1 |
+| 0.1.0 | 2 |
+
+O Core aceita módulos API 1 e API 2. API 1 mantém lifecycle e `typeSettings`; API 2 adiciona objetivos, etapas, typed data e eventos de domínio.
 
 O módulo declara em `fabric.mod.json` qual versão da API espera:
 

@@ -7,6 +7,9 @@ personalizados no BigBangEventos. Cada módulo é um mod Fabric separado que
 declara dependência do `bigbangeventos` e implementa o entrypoint
 `bigbangeventos:event_module`.
 
+API 2 também fornece objetivos, etapas, typed data e `DomainEventBus`. Módulos
+API 1 continuam carregando sem essas capacidades.
+
 ## Como funciona
 
 1. Crie um mod Fabric server-side.
