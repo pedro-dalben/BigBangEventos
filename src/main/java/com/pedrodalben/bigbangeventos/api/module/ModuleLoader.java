@@ -20,7 +20,7 @@ import com.pedrodalben.bigbangeventos.data.TypedDataService;
 
 public final class ModuleLoader {
 
-    public static final int API_VERSION = 2;
+    public static final int API_VERSION = 3;
 
     private static final Logger LOG = LoggerFactory.getLogger("BigBangEventos.Modules");
     private static final String ENTRYPOINT_KEY = "bigbangeventos:event_module";

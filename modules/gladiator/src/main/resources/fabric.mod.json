@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "bigbangeventos_gladiator",
+  "version": "${version}",
+  "name": "BigBangEventos Gladiator",
+  "description": "Gladiator competitive event mode for BigBangEventos.",
+  "authors": ["pedro-dalben"],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "bigbangeventos:event_module": [
+      "br.com.bigbangcraft.eventos.gladiator.GladiatorModule"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1",
+    "bigbangeventos": ">=0.3.0"
+  }
+}

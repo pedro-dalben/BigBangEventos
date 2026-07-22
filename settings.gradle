@@ -10,3 +10,4 @@ pluginManagement {
 rootProject.name = 'BigBangEventos'
 include 'modules:parkour'
 include 'modules:treasure-hunt'
+include 'modules:gladiator'

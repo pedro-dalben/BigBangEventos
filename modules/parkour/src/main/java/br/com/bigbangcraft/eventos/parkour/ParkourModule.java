@@ -26,7 +26,7 @@ public final class ParkourModule implements BigBangEventModule {
 
     @Override
     public String version() {
-        return "0.1.0";
+        return "0.3.0-SNAPSHOT";
     }
 
     @Override

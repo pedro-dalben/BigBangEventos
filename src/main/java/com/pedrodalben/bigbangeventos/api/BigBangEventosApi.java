@@ -1,7 +1,7 @@
 package com.pedrodalben.bigbangeventos.api;
 import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import java.util.*;
 public final class BigBangEventosApi {
-    public static final int API_VERSION = 2;
+    public static final int API_VERSION = 3;
     private final EventEngine engine;
     public BigBangEventosApi(EventEngine engine){this.engine=engine;}
     public Optional<EventDefinition> findEvent(String id){return engine.definition(id);}
