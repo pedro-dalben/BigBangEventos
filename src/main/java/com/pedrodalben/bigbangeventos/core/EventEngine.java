@@ -22,6 +22,8 @@ import com.pedrodalben.bigbangeventos.core.round.RoundService;
 import com.pedrodalben.bigbangeventos.core.combat.CombatService;
 import com.pedrodalben.bigbangeventos.core.combat.LifeService;
 import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
+import com.pedrodalben.bigbangeventos.core.respawn.RespawnService;
+import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService;
 import org.slf4j.LoggerFactory;
 
 public final class EventEngine {
@@ -51,6 +53,8 @@ public final class EventEngine {
     private final LifeService lifeService;
     private final EliminationService eliminationService;
     private final CombatService combat;
+    private final RespawnService respawn;
+    private final SpectatorService spectator;
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -76,6 +80,8 @@ public final class EventEngine {
         this.lifeService = new LifeService(events);
         this.eliminationService = new EliminationService(clock, events);
         this.combat = new CombatService(clock, events, lifeService, eliminationService);
+        this.respawn = new RespawnService(clock, events, teleport);
+        this.spectator = new SpectatorService(events, teleport);
         this.validator = new EventValidator(types, objectiveTypes);
         this.objectives = new ObjectiveService(clock, objectiveTypes, events);
         this.objectives.teams(teams);
@@ -106,6 +112,8 @@ public final class EventEngine {
     public LifeService lifeService() { return lifeService; }
     public EliminationService eliminationService() { return eliminationService; }
     public CombatService combat() { return combat; }
+    public RespawnService respawn() { return respawn; }
+    public SpectatorService spectator() { return spectator; }
 
     public synchronized void onTick() { regionTriggers.onTick(); stages.onTick(active.values().stream().map(s -> new StageService.SessionContext(definition(s.eventId()).orElse(null), s)).filter(c -> c.definition()!=null).toList()); }
 

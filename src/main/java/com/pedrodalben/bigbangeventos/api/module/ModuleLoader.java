@@ -22,6 +22,8 @@ import com.pedrodalben.bigbangeventos.core.round.RoundService;
 import com.pedrodalben.bigbangeventos.core.combat.CombatService;
 import com.pedrodalben.bigbangeventos.core.combat.LifeService;
 import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
+import com.pedrodalben.bigbangeventos.core.respawn.RespawnService;
+import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService;
 
 public final class ModuleLoader {
 
@@ -167,5 +169,7 @@ public final class ModuleLoader {
         public CombatService combat(){return api.combat();}
         public LifeService lives(){return api.lifeService();}
         public EliminationService eliminations(){return api.eliminationService();}
+        public RespawnService respawns(){return api.respawn();}
+        public SpectatorService spectators(){return api.spectators();}
     }
 }

@@ -1,5 +1,5 @@
 package com.pedrodalben.bigbangeventos.api;
-import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import com.pedrodalben.bigbangeventos.core.team.TeamService; import com.pedrodalben.bigbangeventos.core.round.RoundService; import com.pedrodalben.bigbangeventos.core.combat.CombatService; import com.pedrodalben.bigbangeventos.core.combat.LifeService; import com.pedrodalben.bigbangeventos.core.combat.EliminationService; import java.util.*;
+import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import com.pedrodalben.bigbangeventos.core.team.TeamService; import com.pedrodalben.bigbangeventos.core.round.RoundService; import com.pedrodalben.bigbangeventos.core.combat.CombatService; import com.pedrodalben.bigbangeventos.core.combat.LifeService; import com.pedrodalben.bigbangeventos.core.combat.EliminationService; import com.pedrodalben.bigbangeventos.core.respawn.RespawnService; import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService; import java.util.*;
 public final class BigBangEventosApi {
     public static final int API_VERSION = 3;
     private final EventEngine engine;
@@ -30,4 +30,6 @@ public final class BigBangEventosApi {
     public CombatService combat(){return engine.combat();}
     public LifeService lifeService(){return engine.lifeService();}
     public EliminationService eliminationService(){return engine.eliminationService();}
+    public RespawnService respawn(){return engine.respawn();}
+    public SpectatorService spectators(){return engine.spectator();}
 }

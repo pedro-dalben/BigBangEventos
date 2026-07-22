@@ -14,6 +14,8 @@ import com.pedrodalben.bigbangeventos.core.round.RoundService;
 import com.pedrodalben.bigbangeventos.core.combat.CombatService;
 import com.pedrodalben.bigbangeventos.core.combat.LifeService;
 import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
+import com.pedrodalben.bigbangeventos.core.respawn.RespawnService;
+import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService;
 
 public interface EventModuleContext {
 
@@ -41,4 +43,6 @@ public interface EventModuleContext {
     default CombatService combat() { throw new UnsupportedOperationException("API 3 não disponível"); }
     default LifeService lives() { throw new UnsupportedOperationException("API 3 não disponível"); }
     default EliminationService eliminations() { throw new UnsupportedOperationException("API 3 não disponível"); }
+    default RespawnService respawns() { throw new UnsupportedOperationException("API 3 não disponível"); }
+    default SpectatorService spectators() { throw new UnsupportedOperationException("API 3 não disponível"); }
 }
