@@ -13,12 +13,15 @@ import com.pedrodalben.bigbangeventos.trigger.*;
 import net.minecraft.commands.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
 
 import java.util.*;
 
 public final class EventoCommand {
     private static final Map<UUID, String> editing = new HashMap<>();
     private static final Map<UUID, TriggerSelection> binding = new HashMap<>();
+    private static final Map<UUID, BlockPos> areaPos1 = new HashMap<>();
+    private static final Map<UUID, BlockPos> areaPos2 = new HashMap<>();
 
     private EventoCommand() {}
 
@@ -67,6 +70,14 @@ public final class EventoCommand {
                     BigBangEventos.engine().sessionByPlayer(player(c).getUUID())
                             .map(s -> s.eventId() + ": " + s.state())
                             .orElse("Você não está em evento."))))
+            .then(Commands.literal("objectives")
+                    .then(Commands.literal("list").executes(c -> message(c, selected(player(c)).objectives().toString())))
+                    .then(Commands.literal("info").then(eventId("objective").executes(c -> message(c, selected(player(c)).objective(StringArgumentType.getString(c,"objective")).map(Object::toString).orElse("Objetivo não encontrado.")))))
+                    .then(Commands.literal("progress").then(Commands.argument("player",StringArgumentType.word()).executes(c -> progressInfo(c)))))
+            .then(Commands.literal("stages")
+                    .then(Commands.literal("list").executes(c -> message(c, selected(player(c)).stages().toString())))
+                    .then(Commands.literal("info").then(eventId("stage").executes(c -> message(c, selected(player(c)).stage(StringArgumentType.getString(c,"stage")).map(Object::toString).orElse("Etapa não encontrada.")))))
+                    .then(Commands.literal("current").executes(c -> BigBangEventos.engine().sessionByPlayer(player(c).getUUID()).map(s -> message(c,s.activeStageId().orElse("Nenhuma etapa ativa."))).orElse(message(c,"Você não está em evento.")))))
             .then(Commands.literal("entrar").then(eventId("id").executes(c -> result(c,
                     BigBangEventos.engine().join(id(c), player(c).getUUID(),
                             player(c).getGameProfile().getName(), false, true)))))
@@ -111,7 +122,19 @@ public final class EventoCommand {
                             return message(c, "Bind cancelado.");
                         }
                         return message(c, "Nenhum bind pendente.");
-                    })));
+                    }))
+                    .then(Commands.literal("area")
+                            .then(Commands.literal("pos1").then(eventId("trigger").executes(c -> setAreaPos(c, true))))
+                            .then(Commands.literal("pos2").then(eventId("trigger").executes(c -> setAreaPos(c, false))))
+                            .then(Commands.literal("radius").then(eventId("trigger")
+                                    .then(Commands.argument("radius", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.01))
+                                            .executes(c -> setRadius(c, 0))))
+                                    .then(Commands.argument("trigger", StringArgumentType.word())
+                                            .then(Commands.argument("radius", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.01))
+                                                    .then(Commands.argument("verticalRadius", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.01))
+                                                            .executes(c -> setRadius(c, com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c,"verticalRadius")))))))
+                            .then(Commands.literal("info").then(eventId("trigger").executes(c -> areaInfo(c))))
+                            .then(Commands.literal("clear").then(eventId("trigger").executes(c -> clearArea(c))))));
 
         var recovery = Commands.literal("recovery").requires(EventoCommand::admin)
                 .then(Commands.literal("status").executes(c -> {
@@ -159,6 +182,7 @@ public final class EventoCommand {
         root = root.then(recovery);
 
         var debug = Commands.literal("debug").requires(EventoCommand::admin)
+                .then(Commands.literal("data").then(Commands.argument("player",StringArgumentType.word()).executes(c -> progressInfo(c))))
                 .then(Commands.literal("player").then(Commands.argument("player", StringArgumentType.word())
                         .executes(c -> {
                             String playerName = StringArgumentType.getString(c, "player");
@@ -223,6 +247,18 @@ public final class EventoCommand {
             return message(c, ex.getMessage());
         }
     }
+    private static int progressInfo(CommandContext<CommandSourceStack> c){String name=StringArgumentType.getString(c,"player");var id=BigBangEventos.engine().players().findOnlineUuidByName(name);if(id.isEmpty())return message(c,"Jogador não encontrado online.");var s=BigBangEventos.engine().sessionByPlayer(id.get());if(s.isEmpty())return message(c,"Jogador não está em evento.");var p=s.get().participant(id.get()).orElse(null);if(p==null)return message(c,"Participante não encontrado.");return message(c,"Objetivos="+BigBangEventos.engine().objectives().listProgress(BigBangEventos.engine().definition(s.get().eventId()).orElseThrow(),s.get(),id.get())+" data="+p.typedData().keys());}
+
+    private static int setAreaPos(CommandContext<CommandSourceStack> c, boolean first) {
+        try { ServerPlayer p=player(c); String trigger=StringArgumentType.getString(c,"trigger"); selected(p).trigger(trigger).orElseThrow(()->new IllegalArgumentException("Gatilho não encontrado.")); (first?areaPos1:areaPos2).put(p.getUUID(),p.blockPosition()); return message(c,(first?"Posição 1":"Posição 2")+" definida para "+trigger+"."); }
+        catch(IllegalArgumentException e){return message(c,e.getMessage());}
+    }
+    private static int setRadius(CommandContext<CommandSourceStack> c, double vertical) {
+        try { ServerPlayer p=player(c); EventDefinition e=selected(p); String id=StringArgumentType.getString(c,"trigger"); var t=e.trigger(id).orElseThrow(()->new IllegalArgumentException("Gatilho não encontrado.")); if(t.type()!=TriggerType.REGION_ENTER&&t.type()!=TriggerType.REGION_EXIT)throw new IllegalArgumentException("Gatilho incompatível com área."); double r=com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(c,"radius"); double vr=vertical==0?r:vertical; t.area(new EventArea.Radius(e.serverId(),p.level().dimension().location().toString(),p.getX(),p.getY(),p.getZ(),r,vr)); BigBangEventos.engine().save(e); return message(c,"Área radius definida."); }
+        catch(IllegalArgumentException ex){return message(c,ex.getMessage());}
+    }
+    private static int areaInfo(CommandContext<CommandSourceStack> c){try{var t=selected(player(c)).trigger(StringArgumentType.getString(c,"trigger")).orElseThrow(()->new IllegalArgumentException("Gatilho não encontrado."));return message(c,t.area().map(Object::toString).orElse("Sem área."));}catch(IllegalArgumentException e){return message(c,e.getMessage());}}
+    private static int clearArea(CommandContext<CommandSourceStack> c){try{EventDefinition e=selected(player(c));e.trigger(StringArgumentType.getString(c,"trigger")).ifPresent(t->t.area(null));BigBangEventos.engine().save(e);return message(c,"Área removida.");}catch(IllegalArgumentException ex){return message(c,ex.getMessage());}}
 
     public static String getEditing(UUID playerId) {
         return editing.get(playerId);

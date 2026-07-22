@@ -2,9 +2,12 @@ package com.pedrodalben.bigbangeventos.persistence;
 
 import com.pedrodalben.bigbangeventos.definition.*;
 import com.pedrodalben.bigbangeventos.participant.EventParticipant;
+import com.pedrodalben.bigbangeventos.participant.ParticipantState;
 import com.pedrodalben.bigbangeventos.platform.StoredLocation;
 import com.pedrodalben.bigbangeventos.session.*;
 import com.pedrodalben.bigbangeventos.snapshot.*;
+import com.pedrodalben.bigbangeventos.objective.*;
+import com.pedrodalben.bigbangeventos.stage.*;
 import org.yaml.snakeyaml.Yaml;
 import java.io.*;
 import java.nio.file.*;
@@ -36,7 +39,7 @@ public final class LocalEventStorage implements EventStorage {
     public synchronized void saveDefinition(EventDefinition d) {
         definitions.put(d.id(), d);
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("schema-version", 1);
+        m.put("schema-version", 2);
         m.put("id", d.id()); m.put("type", d.type()); m.put("server", d.serverId());
         m.put("display-name", d.displayName()); m.put("description", d.description());
         m.put("enabled", d.enabled()); m.put("min-players", d.minPlayers());
@@ -54,9 +57,12 @@ public final class LocalEventStorage implements EventStorage {
             x.put("conditions", t.conditions().stream().map(Enum::name).toList());
             x.put("actions", t.actions().stream().map(a -> Map.of(
                     "type", a.type().name(), "arguments", a.arguments())).toList());
+            t.area().ifPresent(area -> x.put("area", areaMap(area)));
             triggers.put(t.id(), x);
         });
         m.put("triggers", triggers);
+        m.put("stages", d.stages().stream().map(LocalEventStorage::stageMap).toList());
+        m.put("objectives", d.objectives().stream().map(LocalEventStorage::objectiveMap).toList());
         Map<String, Object> settings = d.typeSettings();
         if (!settings.isEmpty()) m.put("type-settings", settings);
         write(events.resolve(d.id() + ".yml"), m);
@@ -78,7 +84,7 @@ public final class LocalEventStorage implements EventStorage {
     public synchronized void saveSession(EventSession s) {
         loadedSessions.put(s.id(), s);
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("schema-version", 1);
+        m.put("schema-version", 2);
         m.put("id", s.id().toString()); m.put("event-id", s.eventId());
         m.put("configuration-version", s.configurationVersion());
         m.put("created-at", s.createdAt().toString());
@@ -98,6 +104,9 @@ public final class LocalEventStorage implements EventStorage {
             parts.add(pm);
         }
         m.put("participants", parts);
+        m.put("objective-progress", s.objectiveProgress().values().stream().map(LocalEventStorage::objectiveProgressMap).toList());
+        m.put("stage-progress", s.stageProgress().values().stream().map(LocalEventStorage::stageProgressMap).toList());
+        m.put("data", dataMap(s.rawData()));
         write(sessions.resolve(s.id() + ".yml"), m);
     }
 
@@ -195,6 +204,7 @@ public final class LocalEventStorage implements EventStorage {
                                 com.pedrodalben.bigbangeventos.trigger.TriggerType.valueOf(str(x, "type")));
                         t.enabled(Boolean.parseBoolean(str(x, "enabled")));
                         if (!str(x, "binding").isBlank()) t.binding(str(x, "binding"));
+                        if (x.get("area") instanceof Map<?, ?> area) t.area(readArea((Map<String,Object>) area));
                         Object cs = x.get("conditions"); if (cs instanceof List<?> l)
                             for (Object c : l) t.addCondition(com.pedrodalben.bigbangeventos.trigger.ConditionType.valueOf(c.toString()));
                         Object as = x.get("actions"); if (as instanceof List<?> l)
@@ -214,12 +224,35 @@ public final class LocalEventStorage implements EventStorage {
                             d.typeSetting(e.getKey().toString(), e.getValue());
                         }
                     }
+                    if (m.get("stages") instanceof List<?> stages) for (Object rawStage : stages) {
+                        Map<String,Object> s = (Map<String,Object>) rawStage;
+                        d.putStage(new EventStageDefinition(str(s,"id"),str(s,"display-name"),str(s,"description"),integer(s,"order"),bool(s,"required"),bool(s,"enabled"),longValue(s,"time-limit-seconds"),strings(s.get("objective-ids")),blankToNull(str(s,"next-stage-id")),bool(s,"auto-complete-when-objectives-complete"),stringMap(s.get("metadata"))));
+                    }
+                    if (m.get("objectives") instanceof List<?> objectives) for (Object rawObjective : objectives) {
+                        Map<String,Object> o = (Map<String,Object>) rawObjective;
+                        d.putObjective(new ObjectiveDefinition(str(o,"id"),str(o,"display-name"),str(o,"description"),str(o,"type-id"),str(o,"stage-id"),bool(o,"required"),integer(o,"order"),longValue(o,"target"),ObjectiveScope.valueOf(str(o,"scope")),bool(o,"enabled"),stringMap(o.get("metadata"))));
+                    }
                     definitions.put(d.id(), d);
                 } catch (Exception e) {
                     throw new IllegalStateException("Definição inválida em " + p, e);
                 }
             });
         }
+        try (var stream = Files.list(sessions)) {
+            stream.filter(p -> p.toString().endsWith(".yml")).forEach(this::loadSession);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadSession(Path path) {
+        try (Reader r=Files.newBufferedReader(path)) {
+            Map<String,Object> m=yaml.load(r); UUID id=UUID.fromString(str(m,"id")); EventSession s=new EventSession(id,str(m,"event-id"),integer(m,"configuration-version"),Instant.parse(str(m,"created-at")),null); s.restoreState(SessionState.valueOf(str(m,"state")),Instant.now()); s.cancelReason(blankToNull(str(m,"cancel-reason")));
+            if(m.get("participants") instanceof List<?> parts)for(Object raw:parts){Map<String,Object> p=(Map<String,Object>)raw;UUID pid=UUID.fromString(str(p,"player-id"));var ep=new EventParticipant(pid,str(p,"name"),Instant.parse(str(p,"joined-at")));ep.state(ParticipantState.valueOf(str(p,"state")));ep.restoreScore(integer(p,"score"));ep.position(integer(p,"position"));s.addParticipant(ep);}
+            if(m.get("objective-progress") instanceof List<?> progress)for(Object raw:progress){Map<String,Object> p=(Map<String,Object>)raw;UUID pid=blankToNull(str(p,"player-id"))==null?null:UUID.fromString(str(p,"player-id"));var op=new com.pedrodalben.bigbangeventos.objective.ObjectiveProgress(str(p,"objective-id"),ObjectiveScope.valueOf(str(p,"scope")),pid,longValue(p,"target"),longValue(p,"current"),ObjectiveStatus.valueOf(str(p,"status")),Instant.parse(str(p,"updated-at")));op.metadata(stringMap(p.get("metadata")));s.objectiveProgress().put(p.get("scope")+":"+p.get("objective-id")+":"+(pid==null?"session":pid),op);}
+            if(m.get("stage-progress") instanceof List<?> progress)for(Object raw:progress){Map<String,Object> p=(Map<String,Object>)raw;String idValue=str(p,"stage-id");s.stageProgress().put(idValue,new SessionStageProgress(idValue,StageStatus.valueOf(str(p,"status")),Instant.now()));}
+            if(m.get("data") instanceof Map<?,?> data)for(var e:data.entrySet()){Map<String,Object> value=(Map<String,Object>)e.getValue();s.rawData().loadRaw(e.getKey().toString(),str(value,"type"),value.get("value"));}
+            loadedSessions.put(id,s);
+        } catch(Exception e){throw new IllegalStateException("Sessão inválida em "+path,e);}
     }
 
     private void write(Path p, Map<String, Object> m) {
@@ -245,6 +278,24 @@ public final class LocalEventStorage implements EventStorage {
     }
     private static int integer(Map<String, Object> m, String key) {
         return Integer.parseInt(str(m, key));
+    }
+    private static long longValue(Map<String,Object> m,String key){return Long.parseLong(str(m,key));}
+    private static boolean bool(Map<String,Object> m,String key){return Boolean.parseBoolean(str(m,key));}
+    private static String blankToNull(String value){return value.isBlank()?null:value;}
+    private static List<String> strings(Object raw){if(!(raw instanceof List<?> l))return List.of();return l.stream().map(Object::toString).toList();}
+    private static Map<String,String> stringMap(Object raw){if(!(raw instanceof Map<?,?> m))return Map.of();var out=new LinkedHashMap<String,String>();m.forEach((k,v)->out.put(k.toString(),v.toString()));return Map.copyOf(out);}
+    private static Map<String,Object> areaMap(EventArea area){
+        if(area instanceof EventArea.Cuboid c)return Map.of("kind","CUBOID","server",c.serverId(),"dimension",c.dimension(),"min-x",c.minX(),"min-y",c.minY(),"min-z",c.minZ(),"max-x",c.maxX(),"max-y",c.maxY(),"max-z",c.maxZ());
+        var r=(EventArea.Radius)area;return Map.of("kind","RADIUS","server",r.serverId(),"dimension",r.dimension(),"center-x",r.centerX(),"center-y",r.centerY(),"center-z",r.centerZ(),"radius",r.radius(),"vertical-radius",r.verticalRadius());
+    }
+    private static Map<String,Object> stageMap(EventStageDefinition s){var m=new LinkedHashMap<String,Object>();m.put("id",s.id());m.put("display-name",s.displayName());m.put("description",s.description());m.put("order",s.order());m.put("required",s.required());m.put("enabled",s.enabled());m.put("time-limit-seconds",s.timeLimitSeconds());m.put("objective-ids",s.objectiveIds());m.put("next-stage-id",s.nextStageId()==null?"":s.nextStageId());m.put("auto-complete-when-objectives-complete",s.autoCompleteWhenObjectivesComplete());m.put("metadata",s.metadata());return m;}
+    private static Map<String,Object> objectiveMap(ObjectiveDefinition o){var m=new LinkedHashMap<String,Object>();m.put("id",o.id());m.put("display-name",o.displayName());m.put("description",o.description());m.put("type-id",o.typeId());m.put("stage-id",o.stageId());m.put("required",o.required());m.put("order",o.order());m.put("target",o.target());m.put("scope",o.scope().name());m.put("enabled",o.enabled());m.put("metadata",o.metadata());return m;}
+    private static Map<String,Object> objectiveProgressMap(com.pedrodalben.bigbangeventos.objective.ObjectiveProgress p){var m=new LinkedHashMap<String,Object>();m.put("objective-id",p.objectiveId());m.put("scope",p.scope().name());m.put("player-id",p.playerId()==null?"":p.playerId().toString());m.put("current",p.current());m.put("target",p.target());m.put("status",p.status().name());m.put("updated-at",p.updatedAt()==null?"":p.updatedAt().toString());m.put("last-source",p.lastSource());m.put("metadata",p.metadata());return m;}
+    private static Map<String,Object> stageProgressMap(com.pedrodalben.bigbangeventos.stage.SessionStageProgress p){var m=new LinkedHashMap<String,Object>();m.put("stage-id",p.stageId());m.put("status",p.status().name());m.put("started-at",p.startedAt()==null?"":p.startedAt().toString());m.put("completed-at",p.completedAt()==null?"":p.completedAt().toString());m.put("failed-at",p.failedAt()==null?"":p.failedAt().toString());m.put("deadline",p.deadline()==null?"":p.deadline().toString());return m;}
+    private static Map<String,Object> dataMap(com.pedrodalben.bigbangeventos.data.InMemoryDataContainer data){var out=new LinkedHashMap<String,Object>();data.rawValues().forEach((key,value)->out.put(key,Map.of("type",value.type(),"value",value.value())));return out;}
+    private static EventArea readArea(Map<String,Object> m){
+        if("CUBOID".equals(str(m,"kind")))return new EventArea.Cuboid(str(m,"server"),str(m,"dimension"),integer(m,"min-x"),integer(m,"min-y"),integer(m,"min-z"),integer(m,"max-x"),integer(m,"max-y"),integer(m,"max-z"));
+        return new EventArea.Radius(str(m,"server"),str(m,"dimension"),number(m,"center-x"),number(m,"center-y"),number(m,"center-z"),number(m,"radius"),number(m,"vertical-radius"));
     }
     private static double number(Map<String, Object> m, String key) {
         return Double.parseDouble(str(m, key));
