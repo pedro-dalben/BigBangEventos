@@ -17,6 +17,7 @@ import com.pedrodalben.bigbangeventos.domain.*;
 import com.pedrodalben.bigbangeventos.objective.*;
 import com.pedrodalben.bigbangeventos.stage.*;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
+import com.pedrodalben.bigbangeventos.core.team.TeamService;
 import org.slf4j.LoggerFactory;
 
 public final class EventEngine {
@@ -41,6 +42,7 @@ public final class EventEngine {
     private final ObjectiveService objectives;
     private final StageService stages;
     private final TypedDataService data = new TypedDataService();
+    private final TeamService teams;
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -61,8 +63,10 @@ public final class EventEngine {
         this.recovery = new SessionRecoveryService(storage, snapshots, restore, players);
         this.regionTriggers = new RegionTriggerService(this, players, 2);
         this.events = new DomainEventBus(scheduler, LoggerFactory.getLogger("BigBangEventos.DomainEvents"));
+        this.teams = new TeamService(clock, events);
         this.validator = new EventValidator(types, objectiveTypes);
         this.objectives = new ObjectiveService(clock, objectiveTypes, events);
+        this.objectives.teams(teams);
         this.stages = new StageService(clock, objectives, events);
         this.objectives.stages(stages);
         this.triggers.services(objectives, stages);
@@ -85,6 +89,7 @@ public final class EventEngine {
     public StageService stages() { return stages; }
     public DomainEventBus events() { return events; }
     public TypedDataService data() { return data; }
+    public TeamService teams() { return teams; }
 
     public synchronized void onTick() { regionTriggers.onTick(); stages.onTick(active.values().stream().map(s -> new StageService.SessionContext(definition(s.eventId()).orElse(null), s)).filter(c -> c.definition()!=null).toList()); }
 

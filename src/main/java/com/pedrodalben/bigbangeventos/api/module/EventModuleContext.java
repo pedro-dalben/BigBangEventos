@@ -9,6 +9,7 @@ import com.pedrodalben.bigbangeventos.objective.*;
 import com.pedrodalben.bigbangeventos.stage.StageService;
 import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
+import com.pedrodalben.bigbangeventos.core.team.TeamService;
 
 public interface EventModuleContext {
 
@@ -31,4 +32,5 @@ public interface EventModuleContext {
     default StageService stageService() { throw new UnsupportedOperationException("API 2 não disponível"); }
     default DomainEventBus events() { throw new UnsupportedOperationException("API 2 não disponível"); }
     default TypedDataService data() { throw new UnsupportedOperationException("API 2 não disponível"); }
+    default TeamService teams() { throw new UnsupportedOperationException("API 3 não disponível"); }
 }

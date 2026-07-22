@@ -5,6 +5,7 @@ import com.pedrodalben.bigbangeventos.objective.ObjectiveDefinition;
 import com.pedrodalben.bigbangeventos.stage.EventStageDefinition;
 import java.time.Instant;
 import java.util.*;
+import com.pedrodalben.bigbangeventos.definition.team.TeamDefinition;
 
 public final class EventDefinition {
     private final String id;
@@ -23,6 +24,7 @@ public final class EventDefinition {
     private final Map<String, Object> typeSettings = new LinkedHashMap<>();
     private final Map<String, ObjectiveDefinition> objectives = new LinkedHashMap<>();
     private final Map<String, EventStageDefinition> stages = new LinkedHashMap<>();
+    private final Map<String, TeamDefinition> teamDefinitions = new LinkedHashMap<>();
 
     public EventDefinition(String id, String type, String serverId) {
         if (!id.matches("[a-z0-9][a-z0-9_-]{0,63}")) throw new IllegalArgumentException("ID inválido: " + id);
@@ -57,6 +59,10 @@ public final class EventDefinition {
     public void putStage(EventStageDefinition stage) { if (stages.putIfAbsent(stage.id(), stage) != null) throw new IllegalArgumentException("etapa duplicada"); changed(); }
     public void replaceStage(EventStageDefinition stage) { if (!stages.containsKey(stage.id())) throw new IllegalArgumentException("etapa não encontrada"); stages.put(stage.id(), stage); changed(); }
     public void removeStage(String id) { stages.remove(id); changed(); }
+    public Collection<TeamDefinition> teamDefinitions() { return List.copyOf(teamDefinitions.values()); }
+    public Optional<TeamDefinition> teamDefinition(String id) { return Optional.ofNullable(teamDefinitions.get(id)); }
+    public void putTeamDefinition(TeamDefinition td) { if (teamDefinitions.putIfAbsent(td.id(), td) != null) throw new IllegalArgumentException("team definition duplicado"); changed(); }
+    public void removeTeamDefinition(String id) { teamDefinitions.remove(id); changed(); }
     private void changed() { configurationVersion++; updatedAt = Instant.now(); }
     private static String require(String value) { if (value == null || value.isBlank()) throw new IllegalArgumentException("valor obrigatório"); return value; }
 }

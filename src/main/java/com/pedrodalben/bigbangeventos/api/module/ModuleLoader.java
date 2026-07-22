@@ -17,6 +17,7 @@ import com.pedrodalben.bigbangeventos.objective.*;
 import com.pedrodalben.bigbangeventos.stage.StageService;
 import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.data.TypedDataService;
+import com.pedrodalben.bigbangeventos.core.team.TeamService;
 
 public final class ModuleLoader {
 
@@ -157,5 +158,6 @@ public final class ModuleLoader {
         public StageService stageService(){return stageService;}
         public DomainEventBus events(){return events;}
         public TypedDataService data(){return data;}
+        public TeamService teams(){return api.teams();}
     }
 }

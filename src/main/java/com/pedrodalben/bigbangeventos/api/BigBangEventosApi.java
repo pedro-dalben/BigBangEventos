@@ -1,5 +1,5 @@
 package com.pedrodalben.bigbangeventos.api;
-import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import java.util.*;
+import com.pedrodalben.bigbangeventos.core.EventEngine; import com.pedrodalben.bigbangeventos.definition.EventDefinition; import com.pedrodalben.bigbangeventos.session.EventSession; import com.pedrodalben.bigbangeventos.domain.DomainEventBus; import com.pedrodalben.bigbangeventos.objective.*; import com.pedrodalben.bigbangeventos.stage.StageService; import com.pedrodalben.bigbangeventos.data.TypedDataService; import com.pedrodalben.bigbangeventos.core.team.TeamService; import java.util.*;
 public final class BigBangEventosApi {
     public static final int API_VERSION = 3;
     private final EventEngine engine;
@@ -25,4 +25,5 @@ public final class BigBangEventosApi {
     public ObjectiveTypeRegistry objectiveTypes(){return engine.objectiveTypes();}
     public DomainEventBus events(){return engine.events();}
     public TypedDataService data(){return engine.data();}
+    public TeamService teams(){return engine.teams();}
 }

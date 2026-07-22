@@ -5,19 +5,23 @@ import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
 import com.pedrodalben.bigbangeventos.domain.ObjectiveEvents;
 import com.pedrodalben.bigbangeventos.definition.EventDefinition;
 import com.pedrodalben.bigbangeventos.session.*;
+import com.pedrodalben.bigbangeventos.session.team.SessionTeam;
 import com.pedrodalben.bigbangeventos.stage.StageService;
 import java.time.Clock;
 import java.util.*;
+import com.pedrodalben.bigbangeventos.core.team.TeamService;
 
 public final class ObjectiveService {
     private final Clock clock; private final ObjectiveTypeRegistry types; private final DomainEventBus events;
     private StageService stages;
+    private TeamService teams;
     public ObjectiveService(Clock clock, ObjectiveTypeRegistry types, DomainEventBus events){this.clock=clock;this.types=types;this.events=events;}
     public void stages(StageService value){stages=value;}
+    public void teams(TeamService value){teams=value;}
     public synchronized ObjectiveResult activate(EventDefinition def, EventSession session, String id, UUID player, String source){
         ObjectiveDefinition od = def.objective(id).orElse(null); if(od==null)return fail("objective_not_found","Objetivo não encontrado",null);
-        if(od.scope()==ObjectiveScope.TEAM)return fail("unsupported_scope","Escopo TEAM ainda não suportado",null);
-        ObjectiveProgress p = progress(session,od,player); if(p==null){p=create(session,od,player);}
+        String teamDefId = resolveTeamScope(session, od, player);
+        ObjectiveProgress p = progress(session,od,player,teamDefId); if(p==null){p=create(session,od,player,teamDefId);}
         if(p.status()==ObjectiveStatus.COMPLETED)return ObjectiveResult.ok("Objetivo já concluído",p);
         if(p.status()==ObjectiveStatus.FAILED||p.status()==ObjectiveStatus.SKIPPED)return fail("terminal_state","Objetivo está em estado terminal",p);
         p.start(clock.instant(),source); events.publish(new ObjectiveEvents.ObjectiveActivated(def.id(),session.id(),p)); return ObjectiveResult.ok("Objetivo ativado",p);
@@ -39,8 +43,8 @@ public final class ObjectiveService {
     }
     public synchronized ObjectiveResult complete(EventDefinition def, EventSession session, String id, UUID player, String source){
         ObjectiveDefinition od=def.objective(id).orElse(null); if(od==null)return fail("objective_not_found","Objetivo não encontrado",null);
-        if(od.scope()==ObjectiveScope.TEAM)return fail("unsupported_scope","Escopo TEAM ainda não suportado",null);
-        ObjectiveProgress p=progress(session,od,player); if(p==null)p=create(session,od,player);
+        String teamDefId = resolveTeamScope(session, od, player);
+        ObjectiveProgress p=progress(session,od,player,teamDefId); if(p==null)p=create(session,od,player,teamDefId);
         if(p.status()==ObjectiveStatus.COMPLETED)return ObjectiveResult.ok("Objetivo já concluído",p);
         if(p.status()==ObjectiveStatus.FAILED||p.status()==ObjectiveStatus.SKIPPED)return fail("terminal_state","Objetivo está em estado terminal",p);
         p.complete(clock.instant(),source); events.publish(new ObjectiveEvents.ObjectiveCompleted(def.id(),session.id(),p));
@@ -48,12 +52,13 @@ public final class ObjectiveService {
     }
     public synchronized ObjectiveResult fail(EventDefinition def, EventSession session, String id, UUID player, String source){return terminal(def,session,id,player,ObjectiveStatus.FAILED,source);}
     public synchronized ObjectiveResult skip(EventDefinition def, EventSession session, String id, UUID player, String source){return terminal(def,session,id,player,ObjectiveStatus.SKIPPED,source);}
-    private ObjectiveResult terminal(EventDefinition def,EventSession session,String id,UUID player,ObjectiveStatus status,String source){ObjectiveDefinition od=def.objective(id).orElse(null);if(od==null)return fail("objective_not_found","Objetivo não encontrado",null);ObjectiveProgress p=progress(session,od,player);if(p==null)p=create(session,od,player);if(p.status()==ObjectiveStatus.COMPLETED)return ObjectiveResult.ok("Objetivo já concluído",p);if(p.status()==status)return ObjectiveResult.ok("Estado já aplicado",p);if(status==ObjectiveStatus.FAILED)p.fail(clock.instant(),source);else p.skip(clock.instant(),source);events.publish(status==ObjectiveStatus.FAILED?new ObjectiveEvents.ObjectiveFailed(def.id(),session.id(),p):new ObjectiveEvents.ObjectiveProgressChanged(def.id(),session.id(),p));return ObjectiveResult.ok("Estado do objetivo atualizado",p);}
-    public synchronized Optional<ObjectiveProgress> getProgress(EventSession s, String id, UUID player){return s.objectiveProgress().values().stream().filter(p->p.objectiveId().equals(id)&&(p.scope()==ObjectiveScope.SESSION||Objects.equals(p.playerId(),player))).findFirst();}
-    public synchronized List<ObjectiveProgress> listProgress(EventDefinition def, EventSession s, UUID player){return def.objectives().stream().map(o->progress(s,o,player)).filter(Objects::nonNull).toList();}
-    public synchronized boolean areRequiredObjectivesCompleted(EventDefinition def, EventSession s, String stageId, UUID player){return def.objectives().stream().filter(o->o.stageId().equals(stageId)&&o.required()&&o.enabled()).allMatch(o->{ObjectiveProgress p=progress(s,o,player);return p!=null&&p.status()==ObjectiveStatus.COMPLETED;});}
-    private ObjectiveProgress progress(EventSession s,ObjectiveDefinition o,UUID player){return s.objectiveProgress().get(key(o,player));}
-    private ObjectiveProgress create(EventSession s,ObjectiveDefinition o,UUID player){if(o.scope()==ObjectiveScope.PARTICIPANT&&player==null)throw new IllegalArgumentException("Jogador obrigatório");var p=new ObjectiveProgress(o.id(),o.scope(),o.scope()==ObjectiveScope.PARTICIPANT?player:null,o.target()==0?1:o.target(),types.find(o.typeId()).map(t->t.initialProgress(o)).orElse(0L),ObjectiveStatus.AVAILABLE,clock.instant());p.metadata(o.metadata());s.objectiveProgress().put(key(o,player),p);return p;}
-    private static String key(ObjectiveDefinition o,UUID player){return o.scope()+":"+o.id()+":"+(o.scope()==ObjectiveScope.PARTICIPANT?player:"session");}
+    private ObjectiveResult terminal(EventDefinition def,EventSession session,String id,UUID player,ObjectiveStatus status,String source){ObjectiveDefinition od=def.objective(id).orElse(null);if(od==null)return fail("objective_not_found","Objetivo não encontrado",null);String teamDefId=resolveTeamScope(session,od,player);ObjectiveProgress p=progress(session,od,player,teamDefId);if(p==null)p=create(session,od,player,teamDefId);if(p.status()==ObjectiveStatus.COMPLETED)return ObjectiveResult.ok("Objetivo já concluído",p);if(p.status()==status)return ObjectiveResult.ok("Estado já aplicado",p);if(status==ObjectiveStatus.FAILED)p.fail(clock.instant(),source);else p.skip(clock.instant(),source);events.publish(status==ObjectiveStatus.FAILED?new ObjectiveEvents.ObjectiveFailed(def.id(),session.id(),p):new ObjectiveEvents.ObjectiveProgressChanged(def.id(),session.id(),p));return ObjectiveResult.ok("Estado do objetivo atualizado",p);}
+    public synchronized Optional<ObjectiveProgress> getProgress(EventSession s, String id, UUID player){return s.objectiveProgress().values().stream().filter(p->p.objectiveId().equals(id)&&(p.scope()==ObjectiveScope.SESSION||p.scope()==ObjectiveScope.TEAM||Objects.equals(p.playerId(),player))).findFirst();}
+    public synchronized List<ObjectiveProgress> listProgress(EventDefinition def, EventSession s, UUID player){return def.objectives().stream().map(o->{String td=resolveTeamScope(s,o,player);return progress(s,o,player,td);}).filter(Objects::nonNull).toList();}
+    public synchronized boolean areRequiredObjectivesCompleted(EventDefinition def, EventSession s, String stageId, UUID player){return def.objectives().stream().filter(o->o.stageId().equals(stageId)&&o.required()&&o.enabled()).allMatch(o->{String td=resolveTeamScope(s,o,player);ObjectiveProgress p=progress(s,o,player,td);return p!=null&&p.status()==ObjectiveStatus.COMPLETED;});}
+    private ObjectiveProgress progress(EventSession s,ObjectiveDefinition o,UUID player,String teamDefId){return s.objectiveProgress().get(key(o,player,teamDefId));}
+    private ObjectiveProgress create(EventSession s,ObjectiveDefinition o,UUID player,String teamDefId){if(o.scope()==ObjectiveScope.PARTICIPANT&&player==null)throw new IllegalArgumentException("Jogador obrigatório");UUID owner=o.scope()==ObjectiveScope.PARTICIPANT?player:null;var p=new ObjectiveProgress(o.id(),o.scope(),owner,o.target()==0?1:o.target(),types.find(o.typeId()).map(t->t.initialProgress(o)).orElse(0L),ObjectiveStatus.AVAILABLE,clock.instant());p.metadata(o.metadata());s.objectiveProgress().put(key(o,player,teamDefId),p);return p;}
+    private static String key(ObjectiveDefinition o,UUID player,String teamDefId){if(o.scope()==ObjectiveScope.PARTICIPANT)return o.scope()+":"+o.id()+":"+player;if(o.scope()==ObjectiveScope.TEAM)return o.scope()+":"+o.id()+":"+teamDefId;return o.scope()+":"+o.id()+":session";}
+    private String resolveTeamScope(EventSession s,ObjectiveDefinition o,UUID player){if(o.scope()!=ObjectiveScope.TEAM||teams==null||player==null)return null;SessionTeam t=teams.getPlayerTeam(s,player);return t!=null?t.teamDefinitionId():null;}
     private static ObjectiveResult fail(String c,String m,ObjectiveProgress p){return ObjectiveResult.fail(c,m,p);}
 }
