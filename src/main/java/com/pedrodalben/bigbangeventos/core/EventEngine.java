@@ -13,12 +13,17 @@ import com.pedrodalben.bigbangeventos.trigger.*;
 import com.pedrodalben.bigbangeventos.validation.*;
 import java.time.*;
 import java.util.*;
+import com.pedrodalben.bigbangeventos.domain.*;
+import com.pedrodalben.bigbangeventos.objective.*;
+import com.pedrodalben.bigbangeventos.stage.*;
+import com.pedrodalben.bigbangeventos.data.TypedDataService;
+import org.slf4j.LoggerFactory;
 
 public final class EventEngine {
     private final EventStorage storage;
     private final Clock clock;
     private final EventTypeRegistry types = new EventTypeRegistry();
-    private final EventValidator validator = new EventValidator(types);
+    private final EventValidator validator;
     private final SessionLifecycle lifecycle;
     private final ParticipationService participation;
     private final ParticipantCompletionService completion;
@@ -31,6 +36,11 @@ public final class EventEngine {
     private final PlatformPlayerService players;
     private final Map<String, EventSession> active = new HashMap<>();
     private RegionTriggerService regionTriggers;
+    private final ObjectiveTypeRegistry objectiveTypes = new ObjectiveTypeRegistry();
+    private final DomainEventBus events;
+    private final ObjectiveService objectives;
+    private final StageService stages;
+    private final TypedDataService data = new TypedDataService();
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -50,6 +60,12 @@ public final class EventEngine {
         this.triggers = new TriggerService(clock, completion);
         this.recovery = new SessionRecoveryService(storage, snapshots, restore, players);
         this.regionTriggers = new RegionTriggerService(this, players, 2);
+        this.events = new DomainEventBus(scheduler, LoggerFactory.getLogger("BigBangEventos.DomainEvents"));
+        this.validator = new EventValidator(types, objectiveTypes);
+        this.objectives = new ObjectiveService(clock, objectiveTypes, events);
+        this.stages = new StageService(clock, objectives, events);
+        this.objectives.stages(stages);
+        this.triggers.services(objectives, stages);
         types.register(new GenericEventType());
     }
 
@@ -64,8 +80,13 @@ public final class EventEngine {
     public PlatformTeleportService teleport() { return teleport; }
     public PlatformPlayerService players() { return players; }
     public RegionTriggerService regionTriggers() { return regionTriggers; }
+    public ObjectiveTypeRegistry objectiveTypes() { return objectiveTypes; }
+    public ObjectiveService objectives() { return objectives; }
+    public StageService stages() { return stages; }
+    public DomainEventBus events() { return events; }
+    public TypedDataService data() { return data; }
 
-    public synchronized void onTick() { regionTriggers.onTick(); }
+    public synchronized void onTick() { regionTriggers.onTick(); stages.onTick(active.values().stream().map(s -> new StageService.SessionContext(definition(s.eventId()).orElse(null), s)).filter(c -> c.definition()!=null).toList()); }
 
     public synchronized void recoverOnStartup() { recovery.recoverOnStartup(); }
 
@@ -127,6 +148,7 @@ public final class EventEngine {
                     }
                 });
             }
+            types.find(d.type()).ifPresent(t -> t.onSessionStart(s));
         }
         return started;
     }
@@ -170,7 +192,7 @@ public final class EventEngine {
         EventSession s = active.get(id);
         if (d == null || s == null) return OperationResult.fail("not_open", "Evento não está aberto");
         OperationResult r = participation.join(d, s, player, name, forced, allowed);
-        if (r.success()) storage.saveSession(s);
+        if (r.success()) { storage.saveSession(s); events.publish(new ObjectiveEvents.ParticipantJoined(id,s.id(),player)); }
         return r;
     }
 
@@ -181,6 +203,7 @@ public final class EventEngine {
         if (r.success()) {
             regionTriggers.cleanupPlayer(player);
             storage.saveSession(s);
+            events.publish(new ObjectiveEvents.ParticipantLeft(s.eventId(),s.id(),player));
         }
         return r;
     }
@@ -189,7 +212,7 @@ public final class EventEngine {
         EventSession s = active.get(eventId);
         if (s == null) return OperationResult.fail("no_session", "Nenhuma sessão ativa");
         OperationResult r = completion.complete(s, player, mode);
-        if (r.success()) storage.saveSession(s);
+        if (r.success()) { storage.saveSession(s); events.publish(new ObjectiveEvents.ParticipantCompleted(eventId,s.id(),player)); }
         return r;
     }
 
@@ -200,7 +223,7 @@ public final class EventEngine {
         if (d == null || s == null) return OperationResult.fail("no_session", "Nenhuma sessão ativa");
         var t = d.trigger(triggerId).orElse(null);
         if (t == null) return OperationResult.fail("trigger_not_found", "Gatilho não encontrado");
-        OperationResult r = triggers.execute(t, new TriggerExecutionContext(s, player, name, permissions, effects));
+        OperationResult r = triggers.execute(t, new TriggerExecutionContext(s, player, name, permissions, effects, d));
         if (r.success()) {
             storage.saveSession(s);
             var triggerRef = t;

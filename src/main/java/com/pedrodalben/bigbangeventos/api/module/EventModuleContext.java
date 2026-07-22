@@ -5,6 +5,10 @@ import com.pedrodalben.bigbangeventos.eventtype.EventTypeRegistry;
 import com.pedrodalben.bigbangeventos.platform.PlatformPlayerService;
 import com.pedrodalben.bigbangeventos.platform.PlatformScheduler;
 import com.pedrodalben.bigbangeventos.platform.PlatformTeleportService;
+import com.pedrodalben.bigbangeventos.objective.*;
+import com.pedrodalben.bigbangeventos.stage.StageService;
+import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
+import com.pedrodalben.bigbangeventos.data.TypedDataService;
 
 public interface EventModuleContext {
 
@@ -21,4 +25,10 @@ public interface EventModuleContext {
     EventModuleLogger logger();
 
     java.nio.file.Path configDirectory();
+
+    default ObjectiveTypeRegistry objectives() { throw new UnsupportedOperationException("API 2 não disponível"); }
+    default ObjectiveService objectiveService() { throw new UnsupportedOperationException("API 2 não disponível"); }
+    default StageService stageService() { throw new UnsupportedOperationException("API 2 não disponível"); }
+    default DomainEventBus events() { throw new UnsupportedOperationException("API 2 não disponível"); }
+    default TypedDataService data() { throw new UnsupportedOperationException("API 2 não disponível"); }
 }

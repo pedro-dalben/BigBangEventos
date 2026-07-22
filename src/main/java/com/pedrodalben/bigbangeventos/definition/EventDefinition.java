@@ -1,6 +1,8 @@
 package com.pedrodalben.bigbangeventos.definition;
 
 import com.pedrodalben.bigbangeventos.trigger.EventTrigger;
+import com.pedrodalben.bigbangeventos.objective.ObjectiveDefinition;
+import com.pedrodalben.bigbangeventos.stage.EventStageDefinition;
 import java.time.Instant;
 import java.util.*;
 
@@ -19,6 +21,8 @@ public final class EventDefinition {
     private EventArea area;
     private final Map<String, EventTrigger> triggers = new LinkedHashMap<>();
     private final Map<String, Object> typeSettings = new LinkedHashMap<>();
+    private final Map<String, ObjectiveDefinition> objectives = new LinkedHashMap<>();
+    private final Map<String, EventStageDefinition> stages = new LinkedHashMap<>();
 
     public EventDefinition(String id, String type, String serverId) {
         if (!id.matches("[a-z0-9][a-z0-9_-]{0,63}")) throw new IllegalArgumentException("ID inválido: " + id);
@@ -35,6 +39,10 @@ public final class EventDefinition {
     public Collection<EventTrigger> triggers() { return List.copyOf(triggers.values()); }
     public Optional<EventTrigger> trigger(String id) { return Optional.ofNullable(triggers.get(id)); }
     public Map<String, Object> typeSettings() { return Map.copyOf(typeSettings); }
+    public Collection<ObjectiveDefinition> objectives() { return List.copyOf(objectives.values()); }
+    public Optional<ObjectiveDefinition> objective(String id) { return Optional.ofNullable(objectives.get(id)); }
+    public Collection<EventStageDefinition> stages() { return List.copyOf(stages.values()); }
+    public Optional<EventStageDefinition> stage(String id) { return Optional.ofNullable(stages.get(id)); }
     public void displayName(String value) { displayName = require(value); changed(); }
     public void description(String value) { description = value == null ? "" : value; changed(); }
     public void enabled(boolean value) { enabled = value; changed(); }
@@ -44,6 +52,11 @@ public final class EventDefinition {
     public void putTrigger(EventTrigger trigger) { if (triggers.putIfAbsent(trigger.id(), trigger) != null) throw new IllegalArgumentException("gatilho duplicado"); changed(); }
     public void removeTrigger(String id) { triggers.remove(id); changed(); }
     public void typeSetting(String key, Object value) { typeSettings.put(key, value); changed(); }
+    public void putObjective(ObjectiveDefinition objective) { if (objectives.putIfAbsent(objective.id(), objective) != null) throw new IllegalArgumentException("objetivo duplicado"); changed(); }
+    public void removeObjective(String id) { objectives.remove(id); changed(); }
+    public void putStage(EventStageDefinition stage) { if (stages.putIfAbsent(stage.id(), stage) != null) throw new IllegalArgumentException("etapa duplicada"); changed(); }
+    public void replaceStage(EventStageDefinition stage) { if (!stages.containsKey(stage.id())) throw new IllegalArgumentException("etapa não encontrada"); stages.put(stage.id(), stage); changed(); }
+    public void removeStage(String id) { stages.remove(id); changed(); }
     private void changed() { configurationVersion++; updatedAt = Instant.now(); }
     private static String require(String value) { if (value == null || value.isBlank()) throw new IllegalArgumentException("valor obrigatório"); return value; }
 }

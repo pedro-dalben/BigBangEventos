@@ -13,10 +13,14 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.*;
+import com.pedrodalben.bigbangeventos.objective.*;
+import com.pedrodalben.bigbangeventos.stage.StageService;
+import com.pedrodalben.bigbangeventos.domain.DomainEventBus;
+import com.pedrodalben.bigbangeventos.data.TypedDataService;
 
 public final class ModuleLoader {
 
-    public static final int API_VERSION = 1;
+    public static final int API_VERSION = 2;
 
     private static final Logger LOG = LoggerFactory.getLogger("BigBangEventos.Modules");
     private static final String ENTRYPOINT_KEY = "bigbangeventos:event_module";
@@ -60,6 +64,7 @@ public final class ModuleLoader {
                 module.onEnable(context);
                 loaded.add(new LoadedModule(module, context));
                 LOG.info("Módulo '{}' (v{}) carregado com sucesso.", name, version);
+                LOG.info("Tipos de evento disponíveis: {}", BigBangEventos.engine().types().all().stream().map(com.pedrodalben.bigbangeventos.eventtype.EventType::id).sorted().toList());
             } catch (Exception e) {
                 LOG.error("Falha ao carregar módulo '{}' (v{}): {}", name, version, e.getMessage(), e);
             }
@@ -107,9 +112,14 @@ public final class ModuleLoader {
         private final PlatformTeleportService teleport;
         private final Path configDirectory;
         private final EventModuleLogger logger;
+        private final ObjectiveTypeRegistry objectives;
+        private final ObjectiveService objectiveService;
+        private final StageService stageService;
+        private final DomainEventBus events;
+        private final TypedDataService data;
 
         DefaultModuleContext(BigBangEventosApi api, EventTypeRegistry eventTypes,
-                             PlatformScheduler scheduler, PlatformPlayerService players,
+                PlatformScheduler scheduler, PlatformPlayerService players,
                              PlatformTeleportService teleport, Path configDirectory, String moduleId) {
             this.api = api;
             this.eventTypes = eventTypes;
@@ -117,6 +127,11 @@ public final class ModuleLoader {
             this.players = players;
             this.teleport = teleport;
             this.configDirectory = configDirectory;
+            this.objectives = BigBangEventos.engine().objectiveTypes();
+            this.objectiveService = BigBangEventos.engine().objectives();
+            this.stageService = BigBangEventos.engine().stages();
+            this.events = BigBangEventos.engine().events();
+            this.data = BigBangEventos.engine().data();
             this.logger = new EventModuleLogger() {
                 private final Logger log = LoggerFactory.getLogger("Module." + moduleId);
                 public void info(String message) { log.info(message); }
@@ -137,5 +152,10 @@ public final class ModuleLoader {
         public PlatformTeleportService teleport() { return teleport; }
         public EventModuleLogger logger() { return logger; }
         public Path configDirectory() { return configDirectory; }
+        public ObjectiveTypeRegistry objectives(){return objectives;}
+        public ObjectiveService objectiveService(){return objectiveService;}
+        public StageService stageService(){return stageService;}
+        public DomainEventBus events(){return events;}
+        public TypedDataService data(){return data;}
     }
 }
