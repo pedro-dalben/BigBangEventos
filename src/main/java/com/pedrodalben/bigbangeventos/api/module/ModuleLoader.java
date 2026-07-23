@@ -24,10 +24,11 @@ import com.pedrodalben.bigbangeventos.core.combat.LifeService;
 import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
 import com.pedrodalben.bigbangeventos.core.respawn.RespawnService;
 import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService;
+import com.pedrodalben.bigbangeventos.api.combat.*;
 
 public final class ModuleLoader {
 
-    public static final int API_VERSION = 3;
+    public static final int API_VERSION = 4;
 
     private static final Logger LOG = LoggerFactory.getLogger("BigBangEventos.Modules");
     private static final String ENTRYPOINT_KEY = "bigbangeventos:event_module";
@@ -171,5 +172,8 @@ public final class ModuleLoader {
         public EliminationService eliminations(){return api.eliminationService();}
         public RespawnService respawns(){return api.respawn();}
         public SpectatorService spectators(){return api.spectators();}
+        public CombatProviderRegistry combatProviders(){return api.combatProviders();}
+        public CombatAttributionService combatAttribution(){return api.combatAttribution();}
+        public CombatActorEligibilityService combatEligibility(){return api.combatEligibility();}
     }
 }

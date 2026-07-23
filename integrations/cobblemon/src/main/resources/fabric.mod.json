@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "bigbangeventos_cobblemon",
+  "version": "${version}",
+  "name": "BigBangEventos Cobblemon Integration",
+  "description": "Integracao Cobblemon para BigBangEventos.",
+  "authors": ["pedrodalben"],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "bigbangeventos:event_module": ["br.com.bigbangcraft.eventos.cobblemon.CobblemonIntegrationModule"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1",
+    "bigbangeventos": ">=0.4.0",
+    "cobblemon": ">=1.7.2"
+  }
+}

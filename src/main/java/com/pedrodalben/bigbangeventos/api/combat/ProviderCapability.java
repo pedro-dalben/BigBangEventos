@@ -1,0 +1,18 @@
+package com.pedrodalben.bigbangeventos.api.combat;
+
+public enum ProviderCapability {
+    RESOLVE_ENTITY,
+    RESOLVE_OWNER,
+    RESOLVE_PROJECTILE,
+    CLEAR_TARGET,
+    RECALL_ENTITY,
+    LIST_ACTIVE_ENTITIES,
+    CAPTURE_STATE,
+    RESTORE_STATE,
+    BLOCK_TARGET,
+    DETECT_FAINT,
+    SUPPRESS_PROGRESSION,
+    BLOCK_TRADITIONAL_BATTLE,
+    ATTRIBUTE_MELEE,
+    ATTRIBUTE_RANGED
+}
