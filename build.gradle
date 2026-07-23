@@ -42,9 +42,9 @@ tasks.register('syncDevModules') {
     dependsOn ':modules:parkour:remapJar', ':modules:treasure-hunt:remapJar', ':modules:gladiator:remapJar'
     doLast {
         copy {
-            from 'modules/parkour/build/libs/bigbangeventos-parkour-0.3.0-SNAPSHOT.jar'
-            from 'modules/treasure-hunt/build/libs/bigbangeventos-treasure-hunt-0.3.0-SNAPSHOT.jar'
-            from 'modules/gladiator/build/libs/bigbangeventos-gladiator-0.3.0-SNAPSHOT.jar'
+            from 'modules/parkour/build/libs/bigbangeventos-parkour-0.4.0-SNAPSHOT.jar'
+            from 'modules/treasure-hunt/build/libs/bigbangeventos-treasure-hunt-0.4.0-SNAPSHOT.jar'
+            from 'modules/gladiator/build/libs/bigbangeventos-gladiator-0.4.0-SNAPSHOT.jar'
             into 'run/mods'
         }
     }

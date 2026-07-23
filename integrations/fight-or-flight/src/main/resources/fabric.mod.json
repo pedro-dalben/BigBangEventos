@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "bigbangeventos_fight_or_flight",
+  "version": "${version}",
+  "name": "BigBangEventos Fight or Flight Integration",
+  "description": "Integracao Fight or Flight para BigBangEventos.",
+  "authors": ["pedrodalben"],
+  "license": "All Rights Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "bigbangeventos:event_module": ["br.com.bigbangcraft.eventos.fightorflight.FightOrFlightIntegrationModule"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.13+1.21.1",
+    "bigbangeventos": ">=0.4.0",
+    "bigbangeventos_cobblemon": ">=0.4.0",
+    "cobblemon": ">=1.7.2",
+    "fightorflight": ">=0.10.9",
+    "architectury": ">=13.0.8"
+  }
+}

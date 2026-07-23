@@ -1,0 +1,25 @@
+plugins { id 'fabric-loom' version '1.9-SNAPSHOT'; id 'java' }
+group = rootProject.mod_group_id
+version = rootProject.mod_version
+base { archivesName = 'bigbangeventos-fight-or-flight' }
+
+repositories { mavenCentral() }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.layered { officialMojangMappings() }
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    compileOnly project(':')
+    testImplementation project(':')
+    testImplementation "org.junit.jupiter:junit-jupiter:${rootProject.junit_version}"
+}
+
+java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
+tasks.named('processResources').configure {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+loom { runs { server { server() } } }

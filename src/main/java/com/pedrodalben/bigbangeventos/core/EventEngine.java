@@ -24,6 +24,7 @@ import com.pedrodalben.bigbangeventos.core.combat.LifeService;
 import com.pedrodalben.bigbangeventos.core.combat.EliminationService;
 import com.pedrodalben.bigbangeventos.core.respawn.RespawnService;
 import com.pedrodalben.bigbangeventos.core.spectator.SpectatorService;
+import com.pedrodalben.bigbangeventos.api.combat.*;
 import org.slf4j.LoggerFactory;
 
 public final class EventEngine {
@@ -55,6 +56,9 @@ public final class EventEngine {
     private final CombatService combat;
     private final RespawnService respawn;
     private final SpectatorService spectator;
+    private final CombatProviderRegistry combatProviders = new CombatProviderRegistry();
+    private final CombatAttributionService combatAttribution;
+    private final CombatActorEligibilityService combatEligibility;
 
     public EventEngine(EventStorage storage, Clock clock,
                        SnapshotGateway snapshotGateway,
@@ -82,6 +86,8 @@ public final class EventEngine {
         this.combat = new CombatService(clock, events, lifeService, eliminationService);
         this.respawn = new RespawnService(clock, events, teleport);
         this.spectator = new SpectatorService(events, teleport);
+        this.combatAttribution = new CombatAttributionService(events, combatProviders);
+        this.combatEligibility = new CombatActorEligibilityService(teams);
         this.validator = new EventValidator(types, objectiveTypes);
         this.objectives = new ObjectiveService(clock, objectiveTypes, events);
         this.objectives.teams(teams);
@@ -114,6 +120,9 @@ public final class EventEngine {
     public CombatService combat() { return combat; }
     public RespawnService respawn() { return respawn; }
     public SpectatorService spectator() { return spectator; }
+    public CombatProviderRegistry combatProviders() { return combatProviders; }
+    public CombatAttributionService combatAttribution() { return combatAttribution; }
+    public CombatActorEligibilityService combatEligibility() { return combatEligibility; }
 
     public synchronized void onTick() { regionTriggers.onTick(); stages.onTick(active.values().stream().map(s -> new StageService.SessionContext(definition(s.eventId()).orElse(null), s)).filter(c -> c.definition()!=null).toList()); }
 
